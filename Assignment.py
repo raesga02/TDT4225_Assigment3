@@ -2,7 +2,7 @@ from pprint import pprint
 from DbConnector import DbConnector
 
 
-class ExampleProgram:
+class Geolife:
 
     def __init__(self):
         self.connection = DbConnector()
@@ -61,7 +61,7 @@ class ExampleProgram:
 def main():
     program = None
     try:
-        program = ExampleProgram()
+        program = Geolife()
         program.create_coll(collection_name="Person")
         program.show_coll()
         program.insert_documents(collection_name="Person")
