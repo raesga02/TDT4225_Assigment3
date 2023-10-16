@@ -15,65 +15,6 @@ class Geolife:
         collection = self.db.create_collection(collection_name)    
         print('Created collection: ', collection)
 
-    """
-    def insert_documents(self, collection_name):
-        docs = [
-            {
-                "_id": 1,
-                "name": "Bobby",
-                "courses": 
-                    [
-                    {'code':'TDT4225', 'name': ' Very Large, Distributed Data Volumes'},
-                    {'code':'BOI1001', 'name': ' How to become a boi or boierinnaa'}
-                    ] 
-            },
-            {
-                "_id": 2,
-                "name": "Bobby",
-                "courses": 
-                    [
-                    {'code':'TDT02', 'name': ' Advanced, Distributed Systems'},
-                    ] 
-            },
-            {
-                "_id": 3,
-                "name": "Bobby",
-            }
-        ]  
-        collection = self.db[collection_name]
-        collection.insert_many(docs)
-    
-    
-    
-    user = 
-    {
-        "_id": --,
-        "has_label": --,
-        "activities": 
-        [
-            {
-                "_id": --,
-                "transportation_mode": --,
-                "start_date_time": --,
-                "end_date_time"--,
-                "trackpoints":
-                [
-                    {
-                        "_id": --,
-                        "lat": --,
-                        "lon": --,
-                        "altitude": --,
-                        "date_days": --,
-                        "date_time": --
-                    }
-                ]
-            }
-        
-        ]
-    }
-    ]
-    """
-
     def insert_documents(self, collection_name):
 
         collection = self.db[collection_name]
