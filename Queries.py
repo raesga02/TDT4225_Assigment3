@@ -9,8 +9,8 @@ This query library works with the following schema:
 
 class QueriesLibrary():
 
-    def __init__(self, _db):
-        self.db = _db
+    def __init__(self, _collection):
+        self.collection = _collection
         self.queries = {
             1: self.query_1,
             2: self.query_2,
@@ -23,7 +23,6 @@ class QueriesLibrary():
             9: self.query_9,
             10: self.query_10,
             11: self.query_11,
-            12: self.query_12, 
         }
 
 
@@ -33,6 +32,7 @@ class QueriesLibrary():
         (after it is inserted into the database).
         '''
         print("Query 1: ")
+        
 
 
     def query_2(self):

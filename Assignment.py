@@ -1,8 +1,9 @@
 import csv
 import os
+import argparse
 from pprint import pprint 
 from DbConnector import DbConnector
-
+from Queries import QueriesLibrary
 
 class Geolife:
 
@@ -10,6 +11,7 @@ class Geolife:
         self.connection = DbConnector()
         self.client = self.connection.client
         self.db = self.connection.db
+        self.query_library = QueriesLibrary(self.db["Users"])
 
     def create_coll(self, collection_name):
         collection = self.db.create_collection(collection_name)    
@@ -164,20 +166,35 @@ class Geolife:
         print(collections)
          
 
+def argument_parser():
+    parser = argparse.ArgumentParser(description='Geolife database manager')
+    parser.add_argument('-i', '--initialize', action='store_true', help='Initialize data into database')
+    parser.add_argument('-f', '--fetch_all', action='store_true', help='Fetch data from database')
+    parser.add_argument('-d', '--drop_all', action='store_true', help='Drop tables from database')
+    parser.add_argument('-q', '--query', type=int, help='Query number to execute')
+    return parser.parse_args()
 
 def main():
     program = None
     try:
         program = Geolife()
-        program.create_coll(collection_name="Users")
-        program.show_coll()
-        program.insert_documents(collection_name="Users")
-        program.fetch_documents(collection_name="Users")
-        program.drop_coll(collection_name="Users")
-        # program.drop_coll(collection_name='person')
-        # program.drop_coll(collection_name='users')
-        # Check that the table is dropped
-        program.show_coll()
+        args = argument_parser()
+
+        if args.initialize:
+            program.create_coll(collection_name="Users")
+            program.insert_documents(collection_name="Users")
+        if args.fetch_all:
+            program.fetch_documents(collection_name="Users")
+            program.show_coll()
+        
+        k = 9
+
+        #program.query_library.queries[k]()
+
+        if args.query:
+            program.query_library.queries[args.query]()
+        if args.drop_all:
+            program.drop_coll(collection_name="Users")
     except Exception as e:
         print("ERROR: Failed to use database:", e)
     finally:
