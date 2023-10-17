@@ -168,8 +168,9 @@ class Geolife:
         print("All data inserted")
     
     def fetch_documents(self, collection_name):
+        print(f"Printing 10 first results from {collection_name}")
         collection = self.db[collection_name]
-        documents = collection.find({})
+        documents = collection.find({}).limit(10)
         for doc in documents: 
             pprint(doc)
         
@@ -205,7 +206,9 @@ def main():
             program.insert_all_documents()
         if args.fetch_all:
             program.fetch_documents(collection_name="Users")
-            program.show_coll()
+            #program.fetch_documents(collection_name="Activities")
+            #program.fetch_documents(collection_name="Trackpoints")
+            #program.show_coll()
         
         k = 9
 

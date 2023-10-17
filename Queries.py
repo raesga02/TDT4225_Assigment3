@@ -50,7 +50,26 @@ class QueriesLibrary():
         Find the average number of activities per user.
         '''
         print("Query 2: ")
+        sizes = self.users.aggregate([
+            {
+                '$project': 
+                {
+                    'activities_size': {'$size': '$activities'}
+                }
+            },
+            {
+                "$group": {
+                    "_id": None,
+                    "avg_activities": { "$avg": "$activities_size"}
+                }
+            },
+            {
+                "$unset": "_id" 
 
+            }
+            
+        ])
+        for p in sizes: pprint(p)
 
     def query_3(self):
         '''
