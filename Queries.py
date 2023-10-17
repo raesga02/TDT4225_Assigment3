@@ -37,10 +37,12 @@ class QueriesLibrary():
         (after it is inserted into the database).
         '''
         print("Query 1: ")
+        #Get number of documents for each table
         num_users = self.users.count_documents({})
         num_activities = self.activities.count_documents({})
         num_trackpoints = self.trackpoints.count_documents({})
 
+        #Print results
         print(f"Number of users: {num_users}")
         print(f"Number of activities: {num_activities}")
         print(f"Number of trackpoints: {num_trackpoints}")
@@ -51,24 +53,27 @@ class QueriesLibrary():
         '''
         print("Query 2: ")
         avarage_activities = self.users.aggregate([
+            #Get the number of trackpoints ids in the array
             {
                 '$project': 
                 {
                     'activities_size': {'$size': '$activities'}
                 }
             },
+            #Group all the activities making the average of the number of trackpoints ids in the array
             {
                 "$group": {
                     "_id": None,
                     "avg_activities": { "$avg": "$activities_size"}
                 }
             },
+            #Dont show id that is just None
             {
                 "$unset": "_id" 
-
             }
             
         ])
+        #Print results
         for result in avarage_activities: pprint(result)
 
     def query_3(self):
@@ -92,6 +97,7 @@ class QueriesLibrary():
         '''
         print("Query 5: ")
         number_activities_trackpoints = self.activities.aggregate([
+            #Group activities by the transportation mode
             {
                 "$group": 
                 {
@@ -99,17 +105,21 @@ class QueriesLibrary():
                     "number_activities": { "$sum": 1}
                 }
             },
+            #Delete if transportation mode is none
             {
                 
                 "$match": { "_id": { "$ne": None } }
             },
+            #Rename the columns
             {
                 "$project": { "number_activities": "$number_activities", "transportation_mode": "$_id" }
             },
+            #Delete _id because now it is shown as transportation_mode
             {
                 "$unset": "_id" 
             }
         ])
+        #Print results
         for result in number_activities_trackpoints: pprint(result)
 
 
@@ -134,6 +144,50 @@ class QueriesLibrary():
         Find the top 20 users who have gained the most altitude meter
         '''
         print("Query 8: ")
+        activivy_a = self.activities.aggregate([
+            #Join activities with its trackpoints
+            {
+                '$lookup':
+                {
+                    'from':'Trackpoints',
+                    'localField':'trackpoints',
+                    'foreignField':'_id',
+                    'as':'activity_trackpoints'
+                }
+            },
+            #Keep just the trackpoint altitudes and user id
+            {
+                "$project": 
+                { 
+                    "altitudes": "$activity_trackpoints.altitude",
+                    "user_id": "$user_id"    
+                }
+            },
+            #For each activity get its altitude diference "maximum altitude - minimum altitude"
+            {  
+                "$project":
+                {
+                    "_id": "$_id",
+                    "user_id": "$user_id",
+                    "altitude_dif": {"$subtract": [{ "$max": "$altitudes" }, { "$min": "$altitudes" }]}
+                }
+            },
+            #Group all activities by user keeping the maximum altitude difference for each user
+            {
+                "$group": 
+                {
+                    "_id": "$user_id",
+                    "altitude_difference": { "$max": "$altitude_dif"}
+                }
+            },
+            #Sort them descending
+            {"$sort" : { "altitude_difference" : -1}},
+
+            #Get just 20
+            {"$limit": 20}
+            ]);
+        #Print results
+        for result in activivy_a: pprint(result)
 
 
     def query_9(self):
