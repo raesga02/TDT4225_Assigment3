@@ -11,16 +11,18 @@ class Geolife:
         self.connection = DbConnector()
         self.client = self.connection.client
         self.db = self.connection.db
-        self.query_library = QueriesLibrary(self.db["Users"])
+        self.query_library = QueriesLibrary(self.db)
 
     def create_coll(self, collection_name):
         collection = self.db.create_collection(collection_name)    
         print('Created collection: ', collection)
 
-    def insert_documents(self, collection_name):
+    def insert_all_documents(self):
 
-        collection = self.db[collection_name]
-        users = []
+        #Get the collections
+        user_collection = self.db["Users"]
+        activities_collection = self.db["Activities"]
+        trackpoints_collection = self.db["Trackpoints"]
 
         #Get the users that have labels
         labels_list = open("./dataset/labeled_ids.txt", "r").read().split("\n")
@@ -31,13 +33,17 @@ class Geolife:
         #Variables to keep track of activities ids 
         activities_id = dict()
         activities_counter = 1
-
+        trackpoint_counter = 1
+        
         #Control variables
         skip_first = True
-
         id = -1
-        counter = 0
 
+        #To save documents before adding them to the collections
+        track_values = list()
+        activities_docs = list()
+        user_docs = list()
+        
         #Iterate the database
         for (root,dirs,files) in os.walk('./dataset/Data', topdown=True):
             
@@ -46,13 +52,22 @@ class Geolife:
                 skip_first = False 
                 continue
             
-            #If there is a lot of users to add, add them so we dont kill the database
-            if(len(users) > 10):
-                collection.insert_many(users)
-                users = []
-            
             #If we are in the users folder
             if("Trajectory" in dirs):
+                
+                #If there is a good batch of data to insert
+                if (len(user_docs) > 10):
+                    #Insert data if there is trackpoints to insert
+                    print(f"Inserting {[user['_id'] for user in user_docs] }")
+                    trackpoints_collection.insert_many(track_values)
+                    activities_collection.insert_many(activities_docs)
+                    user_collection.insert_many(user_docs)  
+
+                    #Clear lists
+                    track_values = list()
+                    activities_docs = list()
+                    user_docs = list()
+                    
 
                 #Get the user id
                 id = int(root.split("dataset/Data/")[1])
@@ -61,14 +76,13 @@ class Geolife:
                 if(id not in labels_dict):
                     labels_dict[id] = False
                 
-                #Create the user 
+                #Create the user, no activities yet. 
                 user = {
                     "_id": id,
                     "has_label": labels_dict[id],
                     "activities": []
                 }
-
-                users.append(user)
+                user_docs.append(user)
 
                 #Set up the dictionary of activities for this id
                 activities_id = {}
@@ -106,47 +120,51 @@ class Geolife:
                         if(labels_dict[id] and track_start + " - " + track_end in activities_id):
                             #Get its trasportation mode
                             trasportation = activities_id[track_start + " - " + track_end]
-                            activity = {
-                                "_id": activities_counter,
-                                "transportation_mode": trasportation,
-                                "start_date_time": track_start,
-                                "end_date_time": track_end,
-                                "trackpoints": []
-                            }
-                            activities_counter += 1
-                            #
-                        #If there is no extra data, create it without trasportation mode
+                            
+                        #If there is no extra data, trasportation mode is set to None
                         else:
-                            activity = {
-                                "_id": activities_counter,
-                                "transportation_mode": None,
-                                "start_date_time": track_start,
-                                "end_date_time": track_end,
-                                "trackpoints": []
-                            }
-                            activities_counter += 1
+                            trasportation = None
 
+                        #Add activity id to user
+                        user["activities"].append(activity_id)
+
+                        #Create activity, no trackpoints yet
+                        activity = {
+                            "_id": activity_id,
+                            "user_id": id,
+                            "transportation_mode": trasportation,
+                            "start_date_time": track_start,
+                            "end_date_time": track_end,
+                            "trackpoints": []
+                        }
+                        activities_docs.append(activity)
+                        activities_counter += 1
                     #Reopen file to restart values
                     with open(root + "/" + file_name, 'r') as file: 
-                        track_values = list()
+                        #Skip header
                         for i in range(6):
                             next(file)
                         csvreader = csv.reader(file, delimiter=',')
                         for row in csvreader:
                             #Add this trackpoint to the activity                        
-                            activity["trackpoints"].append({
+                            activity["trackpoints"].append(trackpoint_counter)
+                            #Create trackpoint and add it to the list
+                            track_values.append({
+                                "_id": trackpoint_counter,
+                                "activity_id": activity_id,
                                 "lat": row[0],
                                 "lon": row[1],
                                 "altitude": row[3],
                                 "date_days": row[4],
                                 "date_time": row[5] + ' ' + row[6]
                             })
+                            trackpoint_counter += 1
 
-                    #Add the activity to the user
-                    user["activities"] = activity
-
-        #Add the users that were not added before
-        collection.insert_many(users)         
+        #If there is data left to insert, insert it
+        if(len(track_values) > 0):
+            trackpoints_collection.insert_many(track_values)
+            activities_collection.insert_many(activities_docs)
+            user_collection.insert_many(user_docs)        
         print("All data inserted")
     
     def fetch_documents(self, collection_name):
@@ -182,7 +200,9 @@ def main():
 
         if args.initialize:
             program.create_coll(collection_name="Users")
-            program.insert_documents(collection_name="Users")
+            program.create_coll(collection_name="Activities")
+            program.create_coll(collection_name="Trackpoints")
+            program.insert_all_documents()
         if args.fetch_all:
             program.fetch_documents(collection_name="Users")
             program.show_coll()
@@ -195,6 +215,8 @@ def main():
             program.query_library.queries[args.query]()
         if args.drop_all:
             program.drop_coll(collection_name="Users")
+            program.drop_coll(collection_name="Activities")
+            program.drop_coll(collection_name="Trackpoints")
     except Exception as e:
         print("ERROR: Failed to use database:", e)
     finally:

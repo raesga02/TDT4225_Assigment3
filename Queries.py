@@ -1,6 +1,7 @@
 import tabulate
 import datetime
 from haversine import haversine, Unit
+from pprint import pprint 
 
 '''
 This query library works with the following schema:
@@ -9,8 +10,12 @@ This query library works with the following schema:
 
 class QueriesLibrary():
 
-    def __init__(self, _collection):
-        self.collection = _collection
+    def __init__(self, _db):
+        self.db = _db
+        self.users = self.db["Users"]
+        self.activities = self.db["Activities"]
+        self.trackpoints = self.db["Trackpoints"]
+
         self.queries = {
             1: self.query_1,
             2: self.query_2,
@@ -32,8 +37,13 @@ class QueriesLibrary():
         (after it is inserted into the database).
         '''
         print("Query 1: ")
-        
+        num_users = self.users.count_documents({})
+        num_activities = self.activities.count_documents({})
+        num_trackpoints = self.trackpoints.count_documents({})
 
+        print(f"Number of users: {num_users}")
+        print(f"Number of activities: {num_activities}")
+        print(f"Number of trackpoints: {num_trackpoints}")
 
     def query_2(self):
         '''
