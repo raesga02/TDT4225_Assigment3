@@ -56,9 +56,9 @@ class Geolife:
             if("Trajectory" in dirs):
                 
                 #If there is a good batch of data to insert
-                if (len(user_docs) > 10):
+                if (len(user_docs) > 10 and (len(track_values) > 0) and (len(activities_docs) > 0)):
                     #Insert data if there is trackpoints to insert
-                    print(f"Inserting {[user['_id'] for user in user_docs] }")
+                    print(f"Inserting users: {[user['_id'] for user in user_docs] }")
                     trackpoints_collection.insert_many(track_values)
                     activities_collection.insert_many(activities_docs)
                     user_collection.insert_many(user_docs)  
@@ -152,16 +152,17 @@ class Geolife:
                             track_values.append({
                                 "_id": trackpoint_counter,
                                 "activity_id": activity_id,
-                                "lat": row[0],
-                                "lon": row[1],
-                                "altitude": row[3],
-                                "date_days": row[4],
+                                "lat": float(row[0]),
+                                "lon": float(row[1]),
+                                "altitude": float(row[3]),
+                                "date_days": float(row[4]),
                                 "date_time": row[5] + ' ' + row[6]
                             })
                             trackpoint_counter += 1
 
         #If there is data left to insert, insert it
-        if(len(track_values) > 0):
+        if (len(user_docs) > 0 and (len(track_values) > 0) and (len(activities_docs) > 0)):
+            print(f"Inserting users: {[user['_id'] for user in user_docs] }")
             trackpoints_collection.insert_many(track_values)
             activities_collection.insert_many(activities_docs)
             user_collection.insert_many(user_docs)        
@@ -205,8 +206,8 @@ def main():
             program.create_coll(collection_name="Trackpoints")
             program.insert_all_documents()
         if args.fetch_all:
-            program.fetch_documents(collection_name="Users")
-            #program.fetch_documents(collection_name="Activities")
+            #program.fetch_documents(collection_name="Users")
+            program.fetch_documents(collection_name="Activities")
             #program.fetch_documents(collection_name="Trackpoints")
             #program.show_coll()
         
