@@ -50,7 +50,7 @@ class QueriesLibrary():
         Find the average number of activities per user.
         '''
         print("Query 2: ")
-        sizes = self.users.aggregate([
+        avarage_activities = self.users.aggregate([
             {
                 '$project': 
                 {
@@ -69,7 +69,7 @@ class QueriesLibrary():
             }
             
         ])
-        for p in sizes: pprint(p)
+        for result in avarage_activities: pprint(result)
 
     def query_3(self):
         '''
@@ -91,7 +91,27 @@ class QueriesLibrary():
         for each transportation mode (do not count activities with mode = null)
         '''
         print("Query 5: ")
-    
+        number_activities_trackpoints = self.activities.aggregate([
+            {
+                "$group": 
+                {
+                    "_id": "$transportation_mode",
+                    "number_activities": { "$sum": 1}
+                }
+            },
+            {
+                
+                "$match": { "_id": { "$ne": None } }
+            },
+            {
+                "$project": { "number_activities": "$number_activities", "transportation_mode": "$_id" }
+            },
+            {
+                "$unset": "_id" 
+            }
+        ])
+        for result in number_activities_trackpoints: pprint(result)
+
 
     def query_6(self):
         '''
