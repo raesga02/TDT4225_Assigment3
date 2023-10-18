@@ -195,12 +195,8 @@ class QueriesLibrary():
             if(user_max_altitude[activity["user_id"]] < altitude_dif):
                 user_max_altitude[activity["user_id"]] = altitude_dif
         
-        print(user_max_altitude)
-        print("\n\n")
         #Get top 20 users
         user_max_altitude_filtered = dict(sorted(user_max_altitude.items(), key = lambda x: x[1], reverse = True)[:20])
-        print(user_max_altitude_filtered)
-        print("\n\n")
         #Put the results cleanly
         results = list()
         for key in user_max_altitude_filtered:
@@ -209,7 +205,6 @@ class QueriesLibrary():
                 "total_meters_gained": user_max_altitude_filtered[key]
             })
         #Print results
-        
         for result in results: pprint(result)
 
 
