@@ -154,7 +154,7 @@ class Geolife:
                                 "activity_id": activity_id,
                                 "lat": float(row[0]),
                                 "lon": float(row[1]),
-                                "altitude": float(row[3]),
+                                "altitude": int(float(row[3])),
                                 "date_days": float(row[4]),
                                 "date_time": row[5] + ' ' + row[6]
                             })
@@ -169,9 +169,9 @@ class Geolife:
         print("All data inserted")
     
     def fetch_documents(self, collection_name):
-        print(f"Printing 10 first results from {collection_name}")
+        print(f"Printing first results from {collection_name}")
         collection = self.db[collection_name]
-        documents = collection.find({}).limit(10)
+        documents = collection.find({}).limit(1)
         for doc in documents: 
             pprint(doc)
         
@@ -179,6 +179,7 @@ class Geolife:
     def drop_coll(self, collection_name):
         collection = self.db[collection_name]
         collection.drop()
+        print('Deleated collection: ', collection)
 
         
     def show_coll(self):
