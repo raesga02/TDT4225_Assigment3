@@ -144,7 +144,7 @@ class QueriesLibrary():
         Find the top 20 users who have gained the most altitude meter
         '''
         print("Query 8: ")
-        activivy_a = self.activities.aggregate([
+        activities_with_altitudes = self.activities.aggregate([
             #Join activities with its trackpoints
             {
                 '$lookup':
@@ -155,39 +155,64 @@ class QueriesLibrary():
                     'as':'activity_trackpoints'
                 }
             },
-            #Keep just the trackpoint altitudes and user id
-            {
-                "$project": 
-                { 
-                    "altitudes": "$activity_trackpoints.altitude",
-                    "user_id": "$user_id"    
-                }
+            #Separate the data to be able to use it
+            { "$unwind": "$activity_trackpoints" },
+            #Rejoin the data but now in the correct order
+            { "$group":
+                {
+                    "_id": {"_id":"$_id","user_id": "$user_id"},
+                    "altitudes": {"$push": "$activity_trackpoints.altitude"}
+                } 
             },
-            #For each activity get its altitude diference "maximum altitude - minimum altitude"
-            {  
+            #Cleanly display data to be able to use it in python easily
+            {
                 "$project":
                 {
-                    "_id": "$_id",
-                    "user_id": "$user_id",
-                    "altitude_dif": {"$subtract": [{ "$max": "$altitudes" }, { "$min": "$altitudes" }]}
+                    "_id": "$_id._id",
+                    "user_id": "$_id.user_id",
+                    "altitudes": "$altitudes"
                 }
-            },
-            #Group all activities by user keeping the maximum altitude difference for each user
-            {
-                "$group": 
-                {
-                    "_id": "$user_id",
-                    "altitude_difference": { "$max": "$altitude_dif"}
-                }
-            },
-            #Sort them descending
-            {"$sort" : { "altitude_difference" : -1}},
-
-            #Get just 20
-            {"$limit": 20}
+            }
             ]);
+        
+        user_max_altitude = dict()
+        #Iterate over the activities and calculate altitude difference
+        for activity in activities_with_altitudes: 
+            #Init dictionaries value
+            if(activity["user_id"] not in user_max_altitude):
+                user_max_altitude[activity["user_id"]] = 0
+            
+            #Calculate dif
+            altitude_dif = 0
+            previous = None
+            for altitude in activity["altitudes"]:
+                if int(altitude) == -7777:
+                    continue
+                if(previous is not None and int(altitude) > previous):
+                    altitude_dif += int(altitude) - previous
+                previous = int(altitude)
+            
+            if(user_max_altitude[activity["user_id"]] < altitude_dif):
+                user_max_altitude[activity["user_id"]] = altitude_dif
+        
+        print(user_max_altitude)
+        print("\n\n")
+        #Get top 20 users
+        user_max_altitude_filtered = dict(sorted(user_max_altitude.items(), key = lambda x: x[1], reverse = True)[:20])
+        print(user_max_altitude_filtered)
+        print("\n\n")
+        #Put the results cleanly
+        results = list()
+        for key in user_max_altitude_filtered:
+            results.append({
+                "id": key,
+                "total_meters_gained": user_max_altitude_filtered[key]
+            })
         #Print results
-        for result in activivy_a: pprint(result)
+        
+        for result in results: pprint(result)
+
+
 
 
     def query_9(self):
