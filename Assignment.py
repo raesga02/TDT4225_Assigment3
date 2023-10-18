@@ -207,9 +207,8 @@ def main():
             program.insert_all_documents()
         if args.fetch_all:
             #program.fetch_documents(collection_name="Users")
-            program.fetch_documents(collection_name="Activities")
-            #program.fetch_documents(collection_name="Trackpoints")
-            #program.show_coll()
+            #program.fetch_documents(collection_name="Activities")
+            program.fetch_documents(collection_name="Trackpoints")
         
         k = 9
 

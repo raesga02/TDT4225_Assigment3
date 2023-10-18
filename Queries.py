@@ -214,3 +214,81 @@ class QueriesLibrary():
         transportation_mode
         '''
         print("Query 11: ")
+        users_trasportation = self.users.aggregate([
+            #Delete if transportation mode is false
+            {
+                "$match": { "has_label": { "$ne": False }}
+            },
+            #Join its activities
+            {
+                '$lookup':
+                {
+                    'from':'Activities',
+                    'localField':'activities',
+                    'foreignField':'_id',
+                    'as':'activity_values'
+                }
+            },
+            #Keep just the data we want
+            { 
+                "$group": 
+                { 
+                    "_id" : {"_id": "$_id", "transportation_modes": "$activity_values.transportation_mode"} 
+                }     
+            },
+            #Reorder data for easier use and filter Nones out of the array
+            {
+                "$project":
+                {
+                    "_id": "$_id._id",
+                    "transportation_modes": 
+                    {
+                        "$filter": 
+                        {
+                            "input": "$_id.transportation_modes",
+                            "as": "item",
+                            "cond": {"$ne": ["$$item", None]}
+                        }}
+                }
+            },
+            #Eliminate users with empty arrays
+            {   "$match": 
+                {
+                    "transportation_modes": {"$exists": True, "$ne": []}
+                }
+            },
+            #Separate the array into different documents
+            { "$unwind": "$transportation_modes" },
+            #Regroup by id and trasportation mode doing the count
+            { 
+                "$group": 
+                { 
+                    "_id" : {"_id": "$_id", "transportation_mode": "$transportation_modes"} ,
+                    "number_times_used": {"$sum": 1}
+                }     
+            },
+            #Reorder data for easier use
+            {
+                "$project": 
+                {
+                    "_id": "$_id._id",
+                    "transportation_mode": "$_id.transportation_mode",
+                    "number_times_used": "$number_times_used"
+                }
+            },
+            #Sort data to be able to do the next step
+            { "$sort": { "_id": 1, "number_times_used": -1 } },
+            #Filter, just keep the document with the most used trasportation mode (using first since is sorted)
+            { 
+                "$group": 
+                { 
+                    "_id": "$_id", 
+                    "most_used_transportation_mode": { "$first": "$$ROOT.transportation_mode" } 
+                } 
+            },
+            #Sort data for correct display
+            { "$sort": { "_id": 1} }
+            
+        ])
+        #Print results
+        for result in users_trasportation: pprint(result)
