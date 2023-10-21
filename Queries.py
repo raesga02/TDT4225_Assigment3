@@ -88,6 +88,25 @@ class QueriesLibrary():
         List all users that have taken a taxi
         '''
         print("Query 4: ")
+        users_taxi = self.activities.aggregate([
+            {
+                "$match": { "transportation_mode": "taxi" }
+            },
+            {
+                "$group": { "_id": "$user_id" }
+            },
+            {
+                "$project": 
+                { 
+                    "user_id": "$_id",
+                    "_id": 0
+                }
+            }
+        ])
+        #Print results
+        print("Users that have taken a taxi: ")
+        for result in users_taxi: pprint(result)
+
 
 
     def query_5(self):
@@ -136,7 +155,62 @@ class QueriesLibrary():
         Find the total distance (in km) walked in 2008 by user with id = 112
         '''
         print("Query 7: ")
-    
+        # print all user 112 activities:
+        activities_112 = self.activities.aggregate([
+            {
+                "$match": { "user_id": 112 , "transportation_mode": "walk" }
+            },
+            {
+                "$project":
+                {
+                    "activity_id": "$_id",
+                    "_id": 0,
+                    "trackpoints": "$trackpoints",
+                }
+            },
+            {
+                "$lookup":
+                {
+                    "from": "Trackpoints",
+                    "localField": "trackpoints",
+                    "foreignField": "_id",
+                    "as": "trackpoints",
+                    "pipeline": [
+                        {
+                            "$match": { "date_time": { "$regex": "2008" } }
+                        },
+                        {
+                            "$project":
+                            {
+                                "_id": 0,
+                                "date_time": "$date_time",
+                                "lat": "$lat",
+                                "lon": "$lon",
+                            }
+                        },
+                        {
+                            "$sort": { "date_time": 1 }
+                        }
+                    ]
+                }
+            },
+            {
+                "$sort": { "activity_id": 1 }
+            }
+            ])
+        
+        #for activity in activities_112: pprint(activity)
+
+        # For each activity, calculate the distance between each trackpoint on the array of trackpoints
+        # and sum it to the total distance
+        total_distance = 0
+        for activity in activities_112:
+            for i in range(len(activity["trackpoints"])-1):
+                distance = haversine((activity["trackpoints"][i]["lat"], activity["trackpoints"][i]["lon"]), (activity["trackpoints"][i+1]["lat"], activity["trackpoints"][i+1]["lon"]), unit=Unit.KILOMETERS)
+                total_distance += distance
+        #Print results
+        print(f"Total distance walked by user 112 in 2008: {total_distance} km")
+           
 
 
     def query_8(self):
@@ -226,6 +300,55 @@ class QueriesLibrary():
         (lat = 39.916, lon = 116.397)
         """
         print("Query 10: ")
+        users_forbidden_city = self.activities.aggregate([
+            {
+                "$project":
+                {
+                    "activity_id": "$_id",
+                    "user_id": "$user_id",
+                    "_id": 0,
+                    "trackpoints": "$trackpoints",
+                }
+            },
+            {
+                "$lookup":
+                {
+                    "from": "Trackpoints",
+                    "localField": "trackpoints",
+                    "foreignField": "_id",
+                    "as": "trackpoints",
+                    "pipeline": [
+                        {
+                            "$match": 
+                            { 
+                                "lat": {"$gt": 39.915, "$lt": 39.917},
+                                "lon": {"$gt": 116.396, "$lt": 116.398}
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "$unwind": "$trackpoints"
+            },
+            {
+                "$group": 
+                { 
+                    "_id": "$user_id"
+                }
+            },
+            {
+                "$project":
+                {
+                    "user_id": "$_id",
+                    "_id": 0,
+                }
+            }
+            ])
+        
+        #Print results
+        print("Users that have been in the Forbidden City: ")
+        for result in users_forbidden_city: pprint(result)
 
         
     def query_11(self):
