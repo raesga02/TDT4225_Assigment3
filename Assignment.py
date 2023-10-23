@@ -1,5 +1,6 @@
 import csv
 import os
+import datetime
 import argparse
 from pprint import pprint 
 from DbConnector import DbConnector
@@ -133,8 +134,8 @@ class Geolife:
                             "_id": activity_id,
                             "user_id": id,
                             "transportation_mode": trasportation,
-                            "start_date_time": track_start,
-                            "end_date_time": track_end,
+                            "start_date_time": datetime.datetime.strptime(track_start,'%Y-%m-%d %H:%M:%S'),
+                            "end_date_time": datetime.datetime.strptime(track_end,'%Y-%m-%d %H:%M:%S'),
                             "trackpoints": []
                         }
                         activities_docs.append(activity)
@@ -156,7 +157,7 @@ class Geolife:
                                 "lon": float(row[1]),
                                 "altitude": int(float(row[3])),
                                 "date_days": float(row[4]),
-                                "date_time": row[5] + ' ' + row[6]
+                                "date_time": datetime.datetime.strptime(row[5] + ' ' + row[6], '%Y-%m-%d %H:%M:%S')
                             })
                             trackpoint_counter += 1
 
