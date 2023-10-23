@@ -179,14 +179,7 @@ class QueriesLibrary():
             # Extract the year of each activity
             {
                 '$project': {
-                    'year': {
-                        '$year': {
-                            '$dateFromString': {
-                                'dateString': '$start_date_time',
-                                'format': '%Y-%m-%d %H:%M:%S'
-                            }
-                        }
-                    }
+                    'year': {'$year': '$start_date_time'}
                 }
             },
             # Count the number of activities for each year
@@ -221,12 +214,7 @@ class QueriesLibrary():
         year_most_recorded_hours = self.trackpoints.aggregate([
             {
                 '$project': {
-                    'date': {
-                        '$dateFromString': {
-                            'dateString': '$date_time',
-                            'format': '%Y-%m-%d %H:%M:%S'
-                        }
-                    }
+                    'date': '$date_time'
                 }
             },
             # Extract the year, day of the year and hour for each trackpoint
