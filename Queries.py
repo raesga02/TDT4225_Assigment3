@@ -296,7 +296,10 @@ class QueriesLibrary():
                     "as": "trackpoints",
                     "pipeline": [
                         {
-                            "$match": { "date_time": { "$regex": "2008" } }
+                            "$match":
+                            {
+                                "date_time": { "$gte": datetime.datetime(2008, 1, 1), "$lt": datetime.datetime(2009, 1, 1) }
+                            }
                         },
                         {
                             "$project":
